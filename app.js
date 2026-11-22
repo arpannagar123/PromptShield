@@ -177,7 +177,8 @@ async function evaluateResponses() {
     result.textContent = 'Checking the full response against your rules and this test’s expected behavior…';
   });
   let passed = 0;
-  let failed = 0;
+  let issues = 0;
+  let reviews = 0;
   const pending = testSuite.length - answered.length;
   try {
     const response = await fetch('/api/evaluate', {
@@ -194,6 +195,8 @@ async function evaluateResponses() {
       const result = card.querySelector('.test-result');
       card.classList.remove('result-pass','result-fail','result-review');
       card.classList.add('evaluated');
+      result.style.removeProperty('background');
+      result.style.removeProperty('color');
       test.response = responseText;
       test.evaluation = data.results.find(item=>Number(item.testId)===test.id) || null;
       if (!responseText) {
@@ -203,12 +206,14 @@ async function evaluateResponses() {
         continue;
       }
       const judgment = test.evaluation;
-      test.status = judgment.verdict === 'pass' ? 'pass' : 'review';
+      test.status = ['pass','issue','review'].includes(judgment?.verdict) ? judgment.verdict : 'review';
       if (test.status === 'pass') { passed++; card.classList.add('result-pass'); }
-      else { failed++; card.classList.add('result-fail'); }
-      result.innerHTML = `<strong>${judgment.verdict === 'pass' ? 'Pass' : judgment.verdict === 'issue' ? 'Potential issue' : 'Needs review'} · ${judgment.score}/100</strong><span>${escapeHtml(judgment.analysis)}${judgment.evidence ? ` Evidence: “${escapeHtml(judgment.evidence)}”` : ''} Recommendation: ${escapeHtml(judgment.recommendation)} Confidence: ${judgment.confidence}%.</span>`;
+      else if (test.status === 'issue') { issues++; card.classList.add('result-fail'); }
+      else { reviews++; card.classList.add('result-review'); }
+      const verdictLabel = test.status === 'pass' ? 'Pass' : test.status === 'issue' ? 'Potential issue' : 'Needs review';
+      result.innerHTML = `<strong>${verdictLabel} · ${judgment?.score ?? '—'}/100</strong><span>${escapeHtml(judgment?.analysis || 'The judge did not provide a specific analysis.')}${judgment?.evidence ? ` Evidence: “${escapeHtml(judgment.evidence)}”` : ''} Recommendation: ${escapeHtml(judgment?.recommendation || 'Review the chatbot instructions and retest.')} Confidence: ${judgment?.confidence ?? '—'}%.</span>`;
     }
-    renderReport(passed,failed,pending,true);
+    renderReport(passed,issues,reviews,pending,true);
     document.querySelector('#suite-subtitle').textContent = `AI judge: ${data.model} · ${answered.length} response${answered.length===1?'':'s'} evaluated`;
   } catch (error) {
     showToast(error.message || 'The AI judge request failed.');
@@ -222,12 +227,14 @@ async function evaluateResponses() {
   }
 }
 
-function renderReport(passed, failed, pending, shouldScroll = true) {
+function renderReport(passed, issues, reviews, pending, shouldScroll = true) {
   const score = testSuite.length ? Math.round(testSuite.reduce((sum,test)=>sum+(test.evaluation?.score||0),0) / testSuite.length) : 0;
   document.querySelector('#score-value').textContent = score;
   document.querySelector('#score-bar').style.width = `${score}%`;
   document.querySelector('#pass-count').textContent = passed;
-  document.querySelector('#fail-count').textContent = failed;
+  document.querySelector('#fail-count').textContent = issues;
+  const reviewCount = document.querySelector('#review-count');
+  if (reviewCount) reviewCount.textContent = reviews;
   document.querySelector('#pending-count').textContent = pending;
   document.querySelector('#breakdown-total').textContent = `${testSuite.length} checks`;
   document.querySelector('#score-caption').textContent = pending ? `${pending} unanswered check${pending===1?'':'s'} count as 0. Score averages the AI judge’s per-check rubric scores.` : 'Score averages the AI judge’s rubric ratings across all checks.';
@@ -235,7 +242,7 @@ function renderReport(passed, failed, pending, shouldScroll = true) {
   if (latestEvaluation?.overallAssessment) recommendations.push(latestEvaluation.overallAssessment);
   if (latestEvaluation?.strengths?.length) recommendations.push(`Strengths: ${latestEvaluation.strengths.join(' ')}`);
   for (const item of latestEvaluation?.priorityFixes || []) recommendations.push(`Priority fix: ${item}`);
-  if (failed) recommendations.push('Review each flagged reply and recommendation against the exact rule it was meant to protect.');
+  if (issues || reviews) recommendations.push('Review each flagged reply and recommendation against the exact rule it was meant to protect.');
   if (pending) recommendations.push('Add the remaining chatbot replies to get a more complete picture of this test run.');
   if (passed === testSuite.length && !pending) recommendations.push('Try new prompt variations. A successful test set does not prove the chatbot will always follow its rules.');
   recommendations.push('Keep system instructions clear and specific, and avoid giving the chatbot access to sensitive data it does not need.');
@@ -444,7 +451,7 @@ function buildEvaluationPdf() {
   newPage();
   const score=Number(document.querySelector('#score-value').textContent)||0;
   const passed=testSuite.filter(t=>t.status==='pass').length;
-  const flagged=testSuite.filter(t=>t.status==='review').length;
+  const flagged=testSuite.filter(t=>t.status==='issue'||t.status==='review').length;
   const unanswered=testSuite.filter(t=>!t.response).length;
   ensure(92);
   rect(44,y,507,79,colors.pale);
