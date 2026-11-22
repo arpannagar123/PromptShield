@@ -278,11 +278,18 @@ function serveStatic(req, res, pathname) {
   });
 }
 
-const server = http.createServer((req, res) => {
+function requestHandler(req, res) {
   const url = new URL(req.url, `http://${HOST}:${PORT}`);
   if (url.pathname.startsWith('/api/')) return handleApi(req, res, url.pathname);
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end('Method not allowed'); return; }
   serveStatic(req, res, url.pathname);
-});
+}
 
-server.listen(PORT, HOST, () => console.log(`PromptShield is running at http://${HOST}:${PORT}`));
+// Vercel imports the API handler as a serverless function. Keep the local
+// development server available when this file is launched directly.
+if (require.main === module) {
+  const server = http.createServer(requestHandler);
+  server.listen(PORT, HOST, () => console.log(`PromptShield is running at http://${HOST}:${PORT}`));
+}
+
+module.exports = {handleApi, requestHandler};
