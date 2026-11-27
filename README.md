@@ -26,4 +26,4 @@ The server reads keys from `.env` and binds only to your own computer (`127.0.0.
 n.
 ## Prototype limits
 
-The live API option tests the selected model with each generated prompt; it does not connect to an independently hosted chatbot. The AI judge can make mistakes and is not a security assessment or certification. A production version would need independent evaluation models, human review, and additional controls around test authorization and data retention,
+The live API option tests the selected model with each generated prompt; it does not connect to an independently hosted chatbot. The AI judge can make mistakes and is not a security assessment or certification. A production version would need independent evaluation models, human review, and additional controls around test authorization and data retention.
