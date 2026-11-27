@@ -23,7 +23,7 @@ The server reads keys from `.env` and binds only to your own computer (`127.0.0.
 - Lets you run individual tests against NVIDIA NIM or Groq, paste replies manually, or insert a sample refusal for a demo.
 - Uses the selected AI provider as a rubric-based judge, with per-check analysis, evidence, confidence, and recommendations; downloads a PDF report.
 - Keeps entered rules and replies in page memory only; refreshing the page clears them.
-
+n.
 ## Prototype limits
 
-The live API option tests the selected model with each generated prompt; it does not connect to an independently hosted chatbot. The AI judge can make mistakes and is not a security assessment or certification. A production version would need independent evaluation models, human review, and additional controls around test authorization and data retention.
+The live API option tests the selected model with each generated prompt; it does not connect to an independently hosted chatbot. The AI judge can make mistakes and is not a security assessment or certification. A production version would need independent evaluation models, human review, and additional controls around test authorization and data retention,
