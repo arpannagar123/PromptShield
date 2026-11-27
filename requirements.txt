@@ -1,0 +1,10 @@
+# PromptShield — Project Dependencies
+#
+# 1. Core Web Application (index.html, safety-lab.html, app.js, server.js, api/[...route].js)
+#    - Zero third-party Python or npm packages required.
+#    - Manual Review mode: Any modern web browser (open index.html directly).
+#    - Live AI mode (NVIDIA NIM / Groq): Node.js >= 20.0.0 (uses built-in node:http, node:fs, node:path only).
+#    - Optional environment variables (.env): NVIDIA_API_KEY, NVIDIA_MODEL, GROQ_API_KEY, GROQ_MODEL.
+#
+# 2. Optional Python Dependencies (only needed to regenerate Milestone 2 PDF via docs/build_milestone2.py)
+reportlab>=4.0.0
